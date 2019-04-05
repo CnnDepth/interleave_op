@@ -5,10 +5,10 @@ using namespace tensorflow;
 
 REGISTER_OP("Interleave")
     .Attr("T: {int32, float, double}")
-    .Input("in1: T")
-    .Input("in2: T")
-    .Input("in3: T")
-    .Input("in4: T")
+    .Input("inA: T")
+    .Input("inB: T")
+    .Input("inC: T")
+    .Input("inD: T")
     .Output("out: T")
     .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
       ::tensorflow::shape_inference::ShapeHandle input;
