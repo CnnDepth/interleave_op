@@ -11,7 +11,7 @@ namespace functor{
 // CPU specialization of actual computation.
 template <typename T>
 struct InterleaveFunctor<CPUDevice, T> {
-  void operator()(const CPUDevice& d, const int out_size, const int height, const int width, const T* in1, const T* in2, const T* in3, const T* in4, T* out) {
+  void operator()(const CPUDevice& d, const int out_size, const shape_t& target_shape, const T* in1, const T* in2, const T* in3, const T* in4, T* out) {
     for( int i = 0; i < out_size; ++i )
     {
 			out[i] = 2;
@@ -87,9 +87,9 @@ class InterleaveOp : public OpKernel {
       Name("Interleave").Device(DEVICE_CPU).TypeConstraint<T>("T"), \
       InterleaveOp<CPUDevice, T>);
 
-//REGISTER_CPU(float);
-//REGISTER_CPU(int32);
-//REGISTER_CPU(double);
+REGISTER_CPU(float);
+REGISTER_CPU(int32);
+REGISTER_CPU(double);
 
 // Register the GPU kernels.
 
