@@ -10,14 +10,50 @@ typedef Eigen::GpuDevice GPUDevice;
 namespace functor{
 // CPU specialization of actual computation.
 template <typename T>
-struct InterleaveFunctor<CPUDevice, T> {
-  void operator()(const CPUDevice& d, const int out_size, const shape_t& target_shape, const T* in1, const T* in2, const T* in3, const T* in4, T* out) {
-    for( int i = 0; i < out_size; ++i )
+struct InterleaveFunctor<CPUDevice, T> 
+{
+  void operator()(const CPUDevice& d, const int out_size, const shape_t& target_shape, const T* in1, const T* in2, const T* in3, const T* in4, T* out) 
+  {
+	int N = target_shape.n;
+	int H = target_shape.h;
+	int W = target_shape.w;
+	int C = target_shape.c;  
+	  
+    for( int index = 0; index < out_size; ++index )
     {
-			out[i] = 2;
+		int n = index % N;   
+		int h = ( ( index - n ) / N ) % H;
+		int w = ( ( index - h * N - n ) / (N * H) ) % W;
+		int c = ( ( index - w * H * N - h * N - n) / ( N * H * W ) ) % C; 
+	
+		int is_h_even = h % 2;
+		int is_w_even = w % 2;
+	
+		if( !is_h_even )
+		{
+			if( !is_w_even )
+			{
+				out[index] = in1[n + ( ( h / 2 ) ) * N + ( ( w / W ) ) * N * H / 2 + c * N * H * W / 4];
+			}
+			else
+			{
+				out[index] = in3[ n + ( ( h / 2 ) ) * N + ( ( w / W ) ) * N * H / 2 + c * N * H * W / 4];
+			}
+		}
+		else
+		{
+			if( !is_w_even )
+			{
+				out[index] = in2[ n + ( ( h / 2 ) ) * N + ( ( w / W ) ) * N * H / 2 + c * N * H * W / 4  ];
+			}
+			else
+			{
+				out[index] = in4[ n + ( ( h / 2 ) ) * N + ( ( w / W ) ) * N * H / 2 + c * N * H * W / 4  ];
+			}
+		}
+		  
+	  }
 	}
-	//TODO: Release    
-  }
 };
 
 // OpKernel definition.
