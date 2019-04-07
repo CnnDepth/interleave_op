@@ -3,7 +3,6 @@
 #include "interleave.h"
 #include "tensorflow/core/util/cuda_kernel_helper.h"
 #include <cuda/include/cuda.h>
-#include <iostream>
 
 namespace tensorflow{
 namespace functor{
@@ -58,7 +57,6 @@ template <typename T>
 struct InterleaveFunctor<GPUDevice, T>{ 
   void operator()(const GPUDevice& d, const int size, const shape_t& target_shape, const T* in1, const T* in2, const T* in3, const T* in4, T* out) 
   {
-    std::cout << "run on gpu" << std::endl;
   // Launch the cuda kernel.
   //
   // See core/util/cuda_kernel_helper.h for example of computing

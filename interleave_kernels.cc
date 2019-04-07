@@ -14,7 +14,6 @@ struct InterleaveFunctor<CPUDevice, T>
 {
   void operator()(const CPUDevice& d, const int out_size, const shape_t& target_shape, const T* in1, const T* in2, const T* in3, const T* in4, T* out) 
   {
-    std::cout << "run on cpu" << std::endl;
 	int N = target_shape.n;
 	int H = target_shape.h;
 	int W = target_shape.w;
