@@ -14,6 +14,7 @@ struct InterleaveFunctor<CPUDevice, T>
 {
   void operator()(const CPUDevice& d, const int out_size, const shape_t& target_shape, const T* in1, const T* in2, const T* in3, const T* in4, T* out) 
   {
+    std::cout << "run on cpu" << std::endl;
 	int N = target_shape.n;
 	int H = target_shape.h;
 	int W = target_shape.w;
@@ -21,34 +22,36 @@ struct InterleaveFunctor<CPUDevice, T>
 	  
     for( int index = 0; index < out_size; ++index )
     {
-		int n = index % N;   
-		int h = ( ( index - n ) / N ) % H;
-		int w = ( ( index - h * N - n ) / (N * H) ) % W;
-		int c = ( ( index - w * H * N - h * N - n) / ( N * H * W ) ) % C; 
+		int n = index / (H * W * C);   
+		int h = (index % (H * W * C)) / (W * C);
+		int w = (index % (W * C)) / C;
+		int c = index % C; 
 	
 		int is_h_even = h % 2;
 		int is_w_even = w % 2;
+
+    int index_in_input = n * H * W * C / 4 + (h / 2) * W * C / 2 + (w / 2) * C + c;
 	
 		if( !is_h_even )
 		{
 			if( !is_w_even )
 			{
-				out[index] = in1[n + ( ( h / 2 ) ) * N + ( ( w / W ) ) * N * H / 2 + c * N * H * W / 4];
+				out[index] = in1[index_in_input];
 			}
 			else
 			{
-				out[index] = in3[ n + ( ( h / 2 ) ) * N + ( ( w / W ) ) * N * H / 2 + c * N * H * W / 4];
+				out[index] = in2[index_in_input];
 			}
 		}
 		else
 		{
 			if( !is_w_even )
 			{
-				out[index] = in2[ n + ( ( h / 2 ) ) * N + ( ( w / W ) ) * N * H / 2 + c * N * H * W / 4  ];
+				out[index] = in3[index_in_input];
 			}
 			else
 			{
-				out[index] = in4[ n + ( ( h / 2 ) ) * N + ( ( w / W ) ) * N * H / 2 + c * N * H * W / 4  ];
+				out[index] = in4[index_in_input];
 			}
 		}
 		  
@@ -123,9 +126,9 @@ class InterleaveOp : public OpKernel {
       Name("Interleave").Device(DEVICE_CPU).TypeConstraint<T>("T"), \
       InterleaveOp<CPUDevice, T>);
 
-REGISTER_CPU(float);
-REGISTER_CPU(int32);
-REGISTER_CPU(double);
+//REGISTER_CPU(float);
+//REGISTER_CPU(int32);
+//REGISTER_CPU(double);
 
 // Register the GPU kernels.
 

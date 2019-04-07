@@ -3,6 +3,7 @@
 #include "interleave.h"
 #include "tensorflow/core/util/cuda_kernel_helper.h"
 #include <cuda/include/cuda.h>
+#include <iostream>
 
 namespace tensorflow{
 namespace functor{
@@ -17,37 +18,38 @@ __global__ void InterleaveCudaKernel( const int out_size, const int N, const int
   
   for( int index = blockIdx.x * blockDim.x + threadIdx.x; index < out_size; index += blockDim.x * gridDim.x )
   {
-	int n = index % N;   
-	int h = ( ( index - n ) / N ) % H;
-	int w = ( ( index - h * N - n ) / (N * H) ) % W;
-	int c = ( ( index - w * H * N - h * N - n) / ( N * H * W ) ) % C; 
-	
-	int is_h_even = h % 2;
-	int is_w_even = w % 2;
-	
-	if( !is_h_even )
-	{
-		if( !is_w_even )
-		{
-			out[index] = in1[n + ( ( h / 2 ) ) * N + ( ( w / W ) ) * N * H / 2 + c * N * H * W / 4];
-		}
-		else
-		{
-			out[index] = in3[ n + ( ( h / 2 ) ) * N + ( ( w / W ) ) * N * H / 2 + c * N * H * W / 4];
-		}
-	}
-	else
-	{
-		if( !is_w_even )
-		{
-			out[index] = in2[ n + ( ( h / 2 ) ) * N + ( ( w / W ) ) * N * H / 2 + c * N * H * W / 4  ];
-		}
-		else
-		{
-			out[index] = in4[ n + ( ( h / 2 ) ) * N + ( ( w / W ) ) * N * H / 2 + c * N * H * W / 4  ];
-		}
-		
-	}
+	int n = index / (H * W * C);   
+    int h = (index % (H * W * C)) / (W * C);
+    int w = (index % (W * C)) / C;
+    int c = index % C; 
+
+    int is_h_even = h % 2;
+    int is_w_even = w % 2;
+
+    int index_in_input = n * H * W * C / 4 + (h / 2) * W * C / 2 + (w / 2) * C + c;
+    
+    if( !is_h_even )
+    {
+        if( !is_w_even )
+        {
+            out[index] = in1[index_in_input];
+        }
+        else
+        {
+            out[index] = in2[index_in_input];
+        }
+    }
+    else
+    {
+        if( !is_w_even )
+        {
+            out[index] = in3[index_in_input];
+        }
+        else
+        {
+            out[index] = in4[index_in_input];
+        }
+    }
   }  
 }  
 
@@ -56,6 +58,7 @@ template <typename T>
 struct InterleaveFunctor<GPUDevice, T>{ 
   void operator()(const GPUDevice& d, const int size, const shape_t& target_shape, const T* in1, const T* in2, const T* in3, const T* in4, T* out) 
   {
+    std::cout << "run on gpu" << std::endl;
   // Launch the cuda kernel.
   //
   // See core/util/cuda_kernel_helper.h for example of computing
